@@ -1,0 +1,40 @@
+# Load data
+data <- read.csv("MedellínCenso2018_joins1.csv")
+
+# Rename for clarity
+data$estrato <- as.numeric(data$ESTRATO_PREDOMINANTE)
+data$accesibilidad <- as.numeric(data$FREQUENCY) # Alternate with $FRECUENCY_1 and $FRECUENCY_12
+
+# Remove missing values
+data_clean <- subset(data, !is.na(estrato) & !is.na(accesibilidad))
+
+# Correlation test
+cor.test(data_clean$estrato, data_clean$accesibilidad, method = "pearson")
+
+boxplot(accesibilidad ~ estrato, data = data_clean,
+        xlab = "Socioeconomic stratum (1–6)",
+        ylab = "Number of accesible stops",
+        main = "Accessibility to stops by socioeconomic stratum",
+        col = "lightblue", outline = TRUE)
+
+anova_result <- aov(accesibilidad ~ as.factor(estrato), data = data_clean)
+summary(anova_result)
+
+TukeyHSD(anova_result)
+
+# Base scatterplot
+plot(data_clean$estrato, data_clean$accesibilidad,
+     xlab = "Stratum (1–6)",
+     ylab = "Accessible stops",
+     main = "Accessibility vs stratum: non-linear tendency",
+     pch = 16, col = rgb(0,0,0,0.1))  # transparent points for density
+
+# Add linear regression line (what Pearson sees)
+abline(lm(accesibilidad ~ estrato, data = data_clean), col = "red", lwd = 2)
+
+# Add smoothed (non-linear) trend line
+lines(lowess(data_clean$estrato, data_clean$accesibilidad), col = "blue", lwd = 2)
+
+legend("topright", legend = c("Linear (Pearson)", "Smooth tendency"),
+       col = c("red", "blue"), lwd = 2)
+
